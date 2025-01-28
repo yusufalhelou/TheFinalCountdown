@@ -36,19 +36,9 @@ import Spheres1Background from 'https://cdn.jsdelivr.net/npm/threejs-components@
 
     // Add original and golden colors
     bg.spheres.setColors([
-        0x0000ff, // Original color (blue)
+         0x0000ff, // Original color (blue)
         0x000000, // Original color (black)
         0xffffff, // Original color (white)
         0xee9e21  // Warm golden color
-    ]);
-
-    // Resize handler
-    function handleResize() {
-        // Update the --vh custom property
-        document.documentElement.style.setProperty('--vh', `${window.innerHeight * 0.01}px`);
-    }
-
-    // Set --vh custom property on document ready and resize
-    window.addEventListener('resize', handleResize);
-    handleResize();
+        ]);
 })();
