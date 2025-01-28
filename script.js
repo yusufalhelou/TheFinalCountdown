@@ -7,7 +7,7 @@ import Spheres1Background from 'https://cdn.jsdelivr.net/npm/threejs-components@
           day = hour * 24;
 
     // Setting the specific countdown date 
-    const countDownDate = new Date("Jun 28, 2025 16:00:00").getTime();
+    const countDownDate = new Date("Jun 28, 2024 16:00:00").getTime();
     const x = setInterval(function() {
         const now = new Date().getTime(),
               distance = countDownDate - now;
@@ -23,6 +23,8 @@ import Spheres1Background from 'https://cdn.jsdelivr.net/npm/threejs-components@
             document.getElementById("countdown").style.display = "none";
             document.getElementById("content").style.display = "block";
             clearInterval(x);
+            // Reinitialize confetti effect
+            initParticles(); // Call to reinitialize the confetti effect
         }
     }, 1000);
 
@@ -36,9 +38,11 @@ import Spheres1Background from 'https://cdn.jsdelivr.net/npm/threejs-components@
 
     // Add original and golden colors
     bg.spheres.setColors([
-         0x0000ff, // Original color (blue)
+        0x0000ff, // Original color (blue)
         0x000000, // Original color (black)
         0xffffff, // Original color (white)
         0xee9e21  // Warm golden color
-        ]);
+    ]);
+
+
 })();
