@@ -28,7 +28,7 @@ import Spheres1Background from 'https://cdn.jsdelivr.net/npm/threejs-components@
 
     // Initialize ball effect
     const bg = Spheres1Background(document.getElementById('webgl-canvas'), {
-        count: 3,
+        count: 51,
         minSize: 0.3,
         maxSize: 1,
         gravity: 0.5
