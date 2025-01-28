@@ -6,8 +6,8 @@ import Spheres1Background from 'https://cdn.jsdelivr.net/npm/threejs-components@
           hour = minute * 60,
           day = hour * 24;
 
-    // Setting the specific countdown date to January 23, 2025, at 11 AM
-    const countDownDate = new Date("Jan 23, 2025 11:00:00").getTime();
+    // Setting the specific countdown date 
+    const countDownDate = new Date("Jun 28, 2025 16:00:00").getTime();
     const x = setInterval(function() {
         const now = new Date().getTime(),
               distance = countDownDate - now;
