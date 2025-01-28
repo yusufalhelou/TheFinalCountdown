@@ -39,6 +39,6 @@ import Spheres1Background from 'https://cdn.jsdelivr.net/npm/threejs-components@
          0x0000ff, // Original color (blue)
         0x000000, // Original color (black)
         0xffffff, // Original color (white)
-        0xea961e  // Warm golden color
+        0xee9e21  // Warm golden color
         ]);
 })();
