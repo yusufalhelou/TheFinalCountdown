@@ -11,6 +11,7 @@ html, body {
     height: 100%;
     margin: 0;
     overflow-x: hidden; /* Prevent horizontal overflow */
+    overflow-y: hidden; /* Prevent vertical overflow */
 }
 body {
     align-items: center;
@@ -18,7 +19,6 @@ body {
     background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(0,0,0,0.5) 200%);
     display: flex;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
-    overflow-y: hidden; /* Prevent vertical overflow */
 }
 #app {
     position: relative;
