@@ -4,7 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>51's Final Countdown</title>
-    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="styles.css"> <!-- Your existing CSS file -->
+    <link rel="stylesheet" href="particles.css"> <!-- Add new particle CSS -->
 </head>
 <body>
     <div id="app">
@@ -13,7 +14,7 @@
             <a href="https://www.instagram.com/Pharm_d51" target="_blank">
                 <img src="51GoldenLogo.png" alt="Logo" class="logo">
             </a>
-            <h1 id="headline">The Final Countdown</h1>
+            <h1 id="headline" class="particletext confetti">The Final Countdown</h1>
             <div id="countdown">
                 <ul>
                     <li><span id="days"></span>days</li>
@@ -29,6 +30,8 @@
             </div>
         </div>
     </div>
-    <script type="module" src="script.js"></script>
+    <script type="module" src="script.js"></script> <!-- Your existing JavaScript file -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script> <!-- Ensure jQuery is included -->
+    <script src="particles.js" defer></script> <!-- Add new particle JS -->
 </body>
 </html>
