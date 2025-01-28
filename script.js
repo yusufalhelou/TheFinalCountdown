@@ -26,7 +26,7 @@ import Spheres1Background from 'https://cdn.jsdelivr.net/npm/threejs-components@
         }
     }, 1000);
 
-    // Initialize ball effect
+    // Initialize ball effect with additional golden balls
     const bg = Spheres1Background(document.getElementById('webgl-canvas'), {
         count: 51,
         minSize: 0.5,
@@ -34,11 +34,11 @@ import Spheres1Background from 'https://cdn.jsdelivr.net/npm/threejs-components@
         gravity: 0.5
     });
 
-    document.getElementById('gravity-btn').addEventListener('click', () => {
-        bg.spheres.config.gravity = bg.spheres.config.gravity === 0 ? 1 : 0;
-    });
-
-    document.getElementById('colors-btn').addEventListener('click', () => {
-        bg.spheres.setColors([0xffffff * Math.random(), 0xffffff * Math.random(), 0xffffff * Math.random()]);
-    });
+    // Add original and golden colors
+    bg.spheres.setColors([
+        0x1e90ff, // Original color (blue)
+        0x000000, // Original color (black)
+        0x708090, // Original color (grey)
+        0xFFD700  // New golden color
+    ]);
 })();
