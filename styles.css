@@ -48,7 +48,7 @@ body {
     width: 100%; /* Ensure container takes full width */
 }
 .logo {
-    width: 50%; /* Adjust logo size to match original */
+    width: 70%; /* Adjust logo size to match original */
     max-width: 300px; /* Ensure it doesn't get too big */
     height: auto;
     margin-bottom: 40px;
