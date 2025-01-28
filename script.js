@@ -1,3 +1,5 @@
+import Spheres1Background from 'https://cdn.jsdelivr.net/npm/threejs-components@0.0.17/build/backgrounds/spheres1.cdn.min.js';
+
 (function () {
   const second = 1000,
         minute = second * 60,
@@ -25,3 +27,11 @@
     }
   }, 1000);
 }());
+
+const bg = Spheres1Background(document.getElementById('webgl-canvas'), {
+  count: 300,
+  minSize: 0.3,
+  maxSize: 1,
+  gravity: 0.5,
+  colors: [0x0000ff, 0xffffff] // Blue and white colors
+});
