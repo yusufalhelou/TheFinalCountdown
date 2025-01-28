@@ -36,9 +36,9 @@ import Spheres1Background from 'https://cdn.jsdelivr.net/npm/threejs-components@
 
     // Add original and golden colors
     bg.spheres.setColors([
-        0x1e90ff, // Original color (blue)
-        0x000000, // Original color (black)
-        0x708090, // Original color (grey)
-        0xFFD700  // New golden color
+         0x0000ff, // Original color (blue)
+    0x000000, // Original color (black)
+    0xffffff, // Original color (white)
+    0xFFD700  // New golden color
     ]);
 })();
