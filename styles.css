@@ -76,18 +76,7 @@ li span {
     font-size: 4rem;
     padding: 0 .5rem;
 }
-
-/* Responsive design adjustments */
 @media all and (max-width: 768px) {
-    body {
-        align-items: flex-start; /* Align items to the start instead of center */
-        justify-content: flex-start; /* Justify items to the start instead of center */
-    }
-    .container {
-        position: static; /* Reset position for smaller screens */
-        transform: none; /* Remove transform for smaller screens */
-        margin-top: 20px; /* Add margin-top for spacing */
-    }
     h1 {
         font-size: calc(1.5rem * var(--smaller));
     }
