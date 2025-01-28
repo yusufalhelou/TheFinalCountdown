@@ -38,13 +38,16 @@ function lines() {
    });
 }
 
+// Function definition for confetti effect
 function confetti() {
-   $.each($(".particletext.confetti"), function() {
-      var confetticount = ($(this).width() / 50) * 10;
-      for (var i = 0; i <= confetticount; i++) {
-         $(this).append('<span class="particle c' + $.rnd(1, 2) + '" style="top:' + $.rnd(10, 50) + '%; left:' + $.rnd(0, 100) + '%;width:' + $.rnd(6, 8) + 'px; height:' + $.rnd(3, 4) + 'px;animation-delay: ' + ($.rnd(0, 30) / 10) + 's;"></span>');
-      }
-   });
+    $.each($(".particletext.confetti"), function() {
+        var confetticount = ($(this).width() / 50) * 10;
+        for (var i = 0; i <= confetticount; i++) {
+            var topPosition = $.rnd(0, 100); // Confine particles within the height of the text
+            var leftPosition = $.rnd(-10, 110); // Control the horizontal spread to just outside the text
+            $(this).append('<span class="particle c' + $.rnd(1, 2) + '" style="top:' + topPosition + '%; left:' + leftPosition + '%; width:' + $.rnd(6, 8) + 'px; height:' + $.rnd(3, 4) + 'px; animation-delay: ' + ($.rnd(0, 30) / 10) + 's;"></span>');
+        }
+    });
 }
 
 function fire() {
