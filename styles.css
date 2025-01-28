@@ -12,10 +12,10 @@ html, body {
     margin: 0;
 }
 body {
-    display: flex;
     align-items: center;
     justify-content: center;
     background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(0,0,0,0.5) 200%);
+    display: flex;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
 }
 #app {
@@ -33,17 +33,19 @@ body {
     z-index: 1;
 }
 .container {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     color: #e4e0d7;
+    margin: 0 auto;
     text-align: center;
     z-index: 2;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%; /* Ensure container takes full width */
 }
 .logo {
     width: 50%; /* Adjust logo size to match original */
