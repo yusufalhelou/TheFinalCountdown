@@ -10,6 +10,8 @@
 html, body {
     height: 100%;
     margin: 0;
+    overflow-x: hidden; /* Prevent horizontal overflow */
+    overflow-y: hidden; /* Prevent vertical overflow */
 }
 body {
     align-items: center;
@@ -22,6 +24,7 @@ body {
     position: relative;
     width: 100%;
     height: 100%;
+    overflow: hidden; /* Prevent any overflow */
 }
 #webgl-canvas {
     position: absolute;
@@ -29,7 +32,6 @@ body {
     right: 0;
     bottom: 0;
     left: 0;
-    overflow: hidden;
     z-index: 1;
 }
 .container {
