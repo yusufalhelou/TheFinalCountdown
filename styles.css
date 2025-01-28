@@ -49,7 +49,6 @@ body {
 }
 .logo {
     width: 70%; /* Adjust logo size to match original */
-    max-width: 300px; /* Ensure it doesn't get too big */
     height: auto;
     margin-bottom: 40px;
 }
