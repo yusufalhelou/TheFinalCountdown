@@ -5,23 +5,27 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
-    z-index: 1;
+    z-index: 2; /* Above background but below content */
     overflow: hidden;
 }
 
 .course-item {
     position: absolute;
-    color: rgba(128, 128, 128, 0.7);
+    color: rgba(100, 100, 100, 0.7);
     white-space: nowrap;
     font-size: 1rem;
     user-select: none;
     transform: translate(-50%, -50%);
     pointer-events: none;
-    transition: opacity 0.3s ease;
+    transition: all 0.3s ease;
+    text-shadow: 0 0 2px rgba(255, 255, 255, 0.5);
+    font-family: 'Cairo', sans-serif;
+    will-change: transform;
 }
 
 .course-item.struck {
     text-decoration: line-through;
+    opacity: 0.5;
 }
 
 /* Semester proximity styles */
@@ -33,15 +37,60 @@
 .semester-5 { font-size: 0.9rem; opacity: 0.4; }
 .semester-4 { font-size: 0.8rem; opacity: 0.3; }
 .semester-3 { font-size: 0.7rem; opacity: 0.2; }
-.semester-2 { font-size: 0.6rem; opacity: 0.1; }
+.semester-2 { font-size: 0.6rem; opacity: 0.15; }
 .semester-1 { font-size: 0.5rem; opacity: 0.1; }
 
-/* Mobile adjustments */
-@media (max-width: 768px) {
+/* Safe zones for different devices */
+.safe-zone {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Desktop (landscape) - focus on sides */
+@media (min-aspect-ratio: 1/1) {
     .course-item {
-        font-size: 0.8rem;
+        max-width: 30vw;
+        white-space: normal;
+        text-align: center;
+        line-height: 1.2;
     }
-    .semester-10 { font-size: 1.1rem; }
-    .semester-9 { font-size: 1.0rem; }
-    .semester-8 { font-size: 0.9rem; }
+    
+    .safe-zone {
+        top: 15%;
+        bottom: 25%;
+        left: 10%;
+        right: 10%;
+    }
+}
+
+/* Mobile (portrait) - focus on top and bottom */
+@media (max-aspect-ratio: 1/1) {
+    .course-item {
+        max-width: 40vw;
+        word-break: break-word;
+        white-space: normal;
+        text-align: center;
+        line-height: 1.3;
+    }
+    
+    .safe-zone {
+        top: 10%;
+        bottom: 30%;
+        left: 15%;
+        right: 15%;
+    }
+}
+
+/* Animation for newly struck courses */
+@keyframes strike-anim {
+    0% { text-decoration-color: transparent; }
+    100% { text-decoration-color: currentColor; }
+}
+
+.course-item.struck {
+    animation: strike-anim 0.5s ease-out forwards;
 }
