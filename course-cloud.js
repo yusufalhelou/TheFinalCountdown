@@ -99,14 +99,13 @@ const coursesBySemester = {
 /**
  * Gets the bounding rectangle of an element with added padding.
  * @param {string} elementId - The ID of the HTML element.
+ * @param {number} padding - The amount of padding to add around the element.
  * @returns {object|null} The boundary object (top, bottom, left, right) or null if element not found.
  */
-function getElementBoundary(elementId) {
+function getElementBoundary(elementId, padding = 15) {
     const el = document.getElementById(elementId);
     if (!el) return null;
     const rect = el.getBoundingClientRect();
-    // Increased padding for a larger exclusion zone around central elements
-    const padding = 25;
     return {
         top: rect.top - padding,
         bottom: rect.bottom + padding,
@@ -119,9 +118,10 @@ function getElementBoundary(elementId) {
  * Calculates the combined bounding rectangle of multiple elements.
  * This helps determine the overall space occupied by central elements.
  * @param {string[]} elementIds - An array of HTML element IDs.
+ * @param {number} padding - The amount of padding to add around the combined boundary.
  * @returns {object|null} The combined boundary object or null if no elements found.
  */
-function getCombinedBoundary(elementIds) {
+function getCombinedBoundary(elementIds, padding = 30) {
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     let foundAny = false;
 
@@ -139,8 +139,6 @@ function getCombinedBoundary(elementIds) {
 
     if (!foundAny) return null;
 
-    // Add some padding to the combined boundary for extra space
-    const padding = 30;
     return {
         top: minY - padding,
         bottom: maxY + padding,
@@ -150,18 +148,39 @@ function getCombinedBoundary(elementIds) {
 }
 
 /**
- * Checks if a given position (x, y) is clear of all specified boundaries.
- * @param {number} x - The x-coordinate to check.
- * @param {number} y - The y-coordinate to check.
- * @param {Array<object>} boundaries - An array of boundary objects (top, bottom, left, right).
+ * Checks if two rectangles overlap.
+ * @param {object} rect1 - The first rectangle {left, top, right, bottom}.
+ * @param {object} rect2 - The second rectangle {left, top, right, bottom}.
+ * @returns {boolean} True if the rectangles overlap, false otherwise.
+ */
+function doRectanglesOverlap(rect1, rect2) {
+    return rect1.left < rect2.right &&
+           rect1.right > rect2.left &&
+           rect1.top < rect2.bottom &&
+           rect1.bottom > rect2.top;
+}
+
+/**
+ * Checks if a given item rectangle is clear of all specified boundaries and previously placed items.
+ * @param {object} itemRect - The rectangle of the item to check {left, top, right, bottom}.
+ * @param {Array<object>} boundariesToAvoid - An array of boundary objects (e.g., central elements).
+ * @param {Array<object>} placedItems - An array of objects, each containing a 'rect' property for previously placed items.
  * @returns {boolean} True if the position is clear, false otherwise.
  */
-function isPositionClear(x, y, boundaries) {
-    // Check if the point (x, y) is outside of ALL boundaries
-    return boundaries.every(b =>
-        x < b.left || x > b.right ||
-        y < b.top || y > b.bottom
-    );
+function isPositionClear(itemRect, boundariesToAvoid, placedItems) {
+    // Check against fixed boundaries (logo, timer, headline)
+    for (const boundary of boundariesToAvoid) {
+        if (boundary && doRectanglesOverlap(itemRect, boundary)) {
+            return false;
+        }
+    }
+    // Check against already placed course items
+    for (const placedItem of placedItems) {
+        if (doRectanglesOverlap(itemRect, placedItem.rect)) {
+            return false;
+        }
+    }
+    return true;
 }
 
 /**
@@ -175,92 +194,175 @@ function generateCourseCloud() {
     container.innerHTML = '';
 
     // Define the elements that the course cloud should avoid
-    const elementsToAvoid = ['main-logo', 'headline', 'countdown'];
-    // Get individual boundaries for collision checking
-    const boundaries = elementsToAvoid.map(id => getElementBoundary(id)).filter(Boolean);
+    const centralElementsIds = ['main-logo', 'headline', 'countdown'];
+    // Get individual boundaries for collision checking with added padding
+    const centralBoundaries = centralElementsIds.map(id => getElementBoundary(id, 25)).filter(Boolean);
+    // Get the combined boundary of the central elements
+    const combinedCentralRect = getCombinedBoundary(centralElementsIds, 30);
 
-    // Calculate the combined boundary of the central elements to determine a dynamic starting radius
-    const combinedCentralBoundary = getCombinedBoundary(elementsToAvoid);
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
 
-    const centerX = window.innerWidth / 2;
-    const centerY = window.innerHeight / 2;
-    const isMobile = window.innerWidth < 768;
+    // Define the top and bottom container areas based on the central elements
+    // Ensure containers have a minimum height if central elements are very close to top/bottom
+    let topContainer = {
+        top: 0,
+        bottom: combinedCentralRect ? combinedCentralRect.top : viewportHeight / 2 - 50, // Default if no central elements
+        left: 0,
+        right: viewportWidth
+    };
+    let bottomContainer = {
+        top: combinedCentralRect ? combinedCentralRect.bottom : viewportHeight / 2 + 50, // Default if no central elements
+        bottom: viewportHeight,
+        left: 0,
+        right: viewportWidth
+    };
 
-    let minCentralRadius = 0;
-    if (combinedCentralBoundary) {
-        // Calculate the maximum distance from the center to any corner of the combined boundary
-        // This helps ensure the initial placement of course items is outside this central area
-        const distToTopLeft = Math.sqrt(Math.pow(centerX - combinedCentralBoundary.left, 2) + Math.pow(centerY - combinedCentralBoundary.top, 2));
-        const distToTopRight = Math.sqrt(Math.pow(centerX - combinedCentralBoundary.right, 2) + Math.pow(centerY - combinedCentralBoundary.top, 2));
-        const distToBottomLeft = Math.sqrt(Math.pow(centerX - combinedCentralBoundary.left, 2) + Math.pow(centerY - combinedCentralBoundary.bottom, 2));
-        const distToBottomRight = Math.sqrt(Math.pow(centerX - combinedCentralBoundary.right, 2) + Math.pow(centerY - combinedCentralBoundary.bottom, 2));
-        minCentralRadius = Math.max(distToTopLeft, distToTopRight, distToBottomLeft, distToBottomRight);
+    // Ensure containers have positive height, provide a fallback if they collapse
+    if (topContainer.bottom <= topContainer.top) {
+        topContainer.bottom = topContainer.top + 100; // Give it some minimal height
+    }
+    if (bottomContainer.top >= bottomContainer.bottom) {
+        bottomContainer.top = bottomContainer.bottom - 100; // Give it some minimal height
     }
 
-    // Determine the base radius for the innermost semester (Semester 10).
-    // It should be at least the larger of a default value or the calculated minimum radius
-    // plus an additional buffer to ensure space around the central elements.
-    const defaultBaseRadius = isMobile ? 100 : 150;
-    const bufferAroundCentral = isMobile ? 30 : 50; // Extra space
-    const baseRadius = Math.max(defaultBaseRadius, minCentralRadius + bufferAroundCentral);
+    // Flatten all courses and prepare for placement, maintaining semester order (10 first)
+    const allCoursesFlat = [];
+    for (let s = 10; s >= 1; s--) {
+        const courses = coursesBySemester[s];
+        if (courses) {
+            courses.forEach(course => allCoursesFlat.push({
+                name: typeof course === 'object' ? course.name : course,
+                examTime: typeof course === 'object' ? course.examTime : null,
+                semester: s // Store semester for proximity logic
+            }));
+        }
+    }
 
+    const placedItems = []; // Store rectangles of placed items to avoid overlap
 
-    // Iterate through semesters from 10 down to 1 to ensure proximity order
-    for (let semester = 10; semester >= 1; semester--) {
-        const courses = coursesBySemester[semester];
-        if (!courses) continue;
+    // Calculate a dynamic font size and max-width for course items, adaptive to screen size and number of courses.
+    // This ensures uniformity across all courses while adapting to available space.
+    const totalCourseCount = allCoursesFlat.length;
+    const totalAvailableArea = (topContainer.right - topContainer.left) * Math.max(0, (topContainer.bottom - topContainer.top)) +
+                               (bottomContainer.right - bottomContainer.left) * Math.max(0, (bottomContainer.bottom - bottomContainer.top));
 
-        // Calculate the radius for the current semester.
-        // Newer semesters (closer to 10) will have smaller radii, placing them closer to the center.
-        const radius = baseRadius * (1 + (10 - semester) * 0.2); // 0.2 is the spread factor
-        const angleStep = (Math.PI * 2) / courses.length; // Evenly distribute courses around the circle
+    // Heuristic for font size: Adjust these multipliers based on desired visual density.
+    // This formula aims to scale font size based on the average area per course.
+    let targetFontSizeRem = 0.85; // Base font size
+    if (totalCourseCount > 0 && totalAvailableArea > 0) {
+        const averageAreaPerCourse = totalAvailableArea / totalCourseCount;
+        // A scaling factor that makes larger average areas result in larger fonts.
+        // The 0.0005 and 0.5 are tuning parameters; adjust for desired effect.
+        targetFontSizeRem = Math.min(1.0, Math.max(0.6, 0.5 + Math.sqrt(averageAreaPerCourse) * 0.0005));
+    }
 
-        courses.forEach((course, index) => {
-            const el = document.createElement('div');
-            el.className = `course-item semester-${semester}`;
-            // Set text content, handling both string and object course formats
-            el.textContent = typeof course === 'object' ? course.name : course;
+    // Adaptive max-width for course items to prevent them from being too wide
+    const courseItemMaxWidth = Math.max(80, viewportWidth * 0.12); // Min 80px, up to 12% of viewport width
 
-            // Apply strike-through logic:
-            // If it's a Semester 10 course with an exam time, store it for dynamic striking.
-            // Otherwise (Semesters 1-9 or Semester 10 without exam time), pre-strike it.
-            if (typeof course === 'object' && course.examTime) {
-                el.dataset.examTime = course.examTime;
+    // Now, iterate and place courses
+    allCoursesFlat.forEach(courseData => {
+        const el = document.createElement('div');
+        el.className = `course-item semester-${courseData.semester}`;
+        el.textContent = courseData.name;
+        el.style.maxWidth = `${courseItemMaxWidth}px`; // Apply dynamic max-width
+        el.style.fontSize = `${targetFontSizeRem}rem`; // Apply dynamic font size
+
+        if (courseData.examTime) {
+            el.dataset.examTime = courseData.examTime;
+        } else {
+            el.classList.add('struck');
+        }
+
+        // Temporarily append to get dimensions, then remove
+        container.appendChild(el);
+        const itemWidth = el.offsetWidth;
+        const itemHeight = el.offsetHeight;
+        container.removeChild(el);
+
+        let x, y;
+        let positionFound = false;
+        const maxAttempts = 200; // More attempts for better packing and collision avoidance
+
+        // Determine which containers to try for placement, prioritizing closer regions for Semester 10
+        const containersToTry = [];
+
+        // Define sub-regions within top/bottom containers that are closer to the central block
+        const topCloserRegion = {
+            ...topContainer,
+            top: Math.max(topContainer.top, (combinedCentralRect ? combinedCentralRect.top : viewportHeight / 2) - 100) // 100px above central
+        };
+        const bottomCloserRegion = {
+            ...bottomContainer,
+            bottom: Math.min(bottomContainer.bottom, (combinedCentralRect ? combinedCentralRect.bottom : viewportHeight / 2) + 100) // 100px below central
+        };
+
+        // Prioritize these closer regions for Semester 10 courses
+        if (courseData.semester === 10) {
+            if (topCloserRegion.bottom > topCloserRegion.top && topCloserRegion.right > topCloserRegion.left) containersToTry.push(topCloserRegion);
+            if (bottomCloserRegion.bottom > bottomCloserRegion.top && bottomCloserRegion.right > bottomCloserRegion.left) containersToTry.push(bottomCloserRegion);
+        }
+
+        // Add full containers as fallback or for other semesters
+        if (topContainer.bottom > topContainer.top && topContainer.right > topContainer.left) containersToTry.push(topContainer);
+        if (bottomContainer.bottom > bottomContainer.top && bottomContainer.right > bottomContainer.left) containersToTry.push(bottomContainer);
+
+        // Shuffle containers to add randomness to which area is tried first
+        for (let i = containersToTry.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [containersToTry[i], containersToTry[j]] = [containersToTry[j], containersToTry[i]];
+        }
+
+        // Attempt to place the course item
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            const currentContainer = containersToTry[attempt % containersToTry.length]; // Cycle through containers
+
+            // Ensure the container is valid (has positive width and height)
+            if (!currentContainer || currentContainer.right <= currentContainer.left || currentContainer.bottom <= currentContainer.top) {
+                continue;
+            }
+
+            // Generate random position within the current container, ensuring the item fits
+            x = currentContainer.left + Math.random() * (currentContainer.right - currentContainer.left - itemWidth);
+            y = currentContainer.top + Math.random() * (currentContainer.bottom - currentContainer.top - itemHeight);
+
+            // Ensure x and y are not negative and within viewport bounds
+            x = Math.max(0, Math.min(x, viewportWidth - itemWidth));
+            y = Math.max(0, Math.min(y, viewportHeight - itemHeight));
+
+            const itemRect = { left: x, top: y, right: x + itemWidth, bottom: y + itemHeight };
+
+            // Check if the calculated position is clear of all defined boundaries and other placed items
+            if (isPositionClear(itemRect, centralBoundaries, placedItems)) {
+                positionFound = true;
+                el.style.left = `${x}px`;
+                el.style.top = `${y}px`;
+                container.appendChild(el);
+                placedItems.push({ el: el, rect: itemRect }); // Store the element and its final rectangle
+                break; // Position found, move to next course
+            }
+        }
+
+        // Fallback: If no clear position is found after many attempts, place it at a default random spot
+        // This ensures all courses appear, even if some overlap in very dense scenarios.
+        if (!positionFound) {
+            const fallbackContainer = topContainer.bottom > topContainer.top ? topContainer : bottomContainer; // Pick a valid container
+            if (fallbackContainer && fallbackContainer.right > fallbackContainer.left && fallbackContainer.bottom > fallbackContainer.top) {
+                x = fallbackContainer.left + Math.random() * (fallbackContainer.right - fallbackContainer.left - itemWidth);
+                y = fallbackContainer.top + Math.random() * (fallbackContainer.bottom - fallbackContainer.top - itemHeight);
+                x = Math.max(0, Math.min(x, viewportWidth - itemWidth));
+                y = Math.max(0, Math.min(y, viewportHeight - itemHeight));
+                el.style.left = `${x}px`;
+                el.style.top = `${y}px`;
+                container.appendChild(el);
+                placedItems.push({ el: el, rect: { left: x, top: y, right: x + itemWidth, bottom: y + itemHeight } });
             } else {
-                el.classList.add('struck');
+                // If even fallback fails (e.g., no valid containers), just append it.
+                // This scenario should be extremely rare with the container logic.
+                container.appendChild(el);
             }
-
-            // Radial positioning with collision avoidance attempts
-            let x, y, angle;
-            let positionFound = false;
-            // Attempt to find a clear position up to 100 times to avoid overlaps
-            for (let attempt = 0; attempt < 100; attempt++) {
-                // Introduce a small random offset to the angle for a more scattered look
-                angle = angleStep * index + (Math.random() * 0.5 - 0.25);
-                // Calculate position based on center and radius
-                x = centerX + radius * Math.cos(angle);
-                y = centerY + radius * Math.sin(angle);
-
-                // Check if the calculated position is clear of all defined boundaries
-                if (isPositionClear(x, y, boundaries)) {
-                    positionFound = true;
-                    break;
-                }
-            }
-
-            // If no clear position is found after many attempts, place it anyway
-            // (this should be rare with the dynamic baseRadius and increased attempts)
-            if (!positionFound) {
-                x = centerX + radius * Math.cos(angle);
-                y = centerY + radius * Math.sin(angle);
-            }
-
-            // Apply the calculated position to the element's style
-            el.style.left = `${x}px`;
-            el.style.top = `${y}px`;
-            container.appendChild(el);
-        });
-    }
+        }
+    });
 }
 
 /**
