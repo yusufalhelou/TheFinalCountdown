@@ -1,4 +1,3 @@
-// Course data organized by semester (10 = current)
 const coursesBySemester = {
     10: [
         { name: "Drug Design", examTime: "2025-06-15T09:00:00" },
@@ -97,103 +96,70 @@ const coursesBySemester = {
     ]
 };
 
+function getElementBoundary(elementId) {
+    const el = document.getElementById(elementId);
+    if (!el) return null;
+    const rect = el.getBoundingClientRect();
+    return {
+        top: rect.top - 15,
+        bottom: rect.bottom + 15,
+        left: rect.left - 15,
+        right: rect.right + 15
+    };
+}
+
+function isPositionClear(x, y, boundaries) {
+    return boundaries.every(b => 
+        x < b.left || x > b.right || 
+        y < b.top || y > b.bottom
+    );
+}
+
 function generateCourseCloud() {
     const container = document.getElementById('course-cloud-container');
     if (!container) return;
-    
-    // Clear existing courses
+
     container.innerHTML = '';
-    
-    // Create safe zone div
-    const safeZone = document.createElement('div');
-    safeZone.className = 'safe-zone';
-    container.appendChild(safeZone);
-    
-    const isMobile = window.innerWidth < window.innerHeight;
-    const centerX = 50;
-    const centerY = isMobile ? 40 : 50; // Adjust vertical center for mobile
-    const placedPositions = [];
-    const minDistance = isMobile ? 10 : 12; // Minimum distance between courses
-    
-    // Create course elements with collision avoidance
+    const boundaries = [
+        getElementBoundary('main-logo'),
+        getElementBoundary('headline'),
+        getElementBoundary('countdown')
+    ].filter(Boolean);
+
+    const centerX = window.innerWidth / 2;
+    const centerY = window.innerHeight / 2;
+    const isMobile = window.innerWidth < 768;
+    const baseRadius = isMobile ? 100 : 150;
+
     for (let semester = 10; semester >= 1; semester--) {
         const courses = coursesBySemester[semester];
         if (!courses) continue;
-        
-        // Calculate radius based on semester
-        const minRadius = isMobile ? 15 : 20;
-        const maxRadius = isMobile ? 70 : 80;
-        const radius = minRadius + (maxRadius - minRadius) * ((10 - semester) / 9);
-        
+
+        const radius = baseRadius * (1 + (10 - semester) * 0.2);
+        const angleStep = (Math.PI * 2) / courses.length;
+
         courses.forEach((course, index) => {
             const el = document.createElement('div');
             el.className = `course-item semester-${semester}`;
-            
-            // Handle both string and object formats
-            if (typeof course === 'object') {
-                el.textContent = course.name;
-                if (course.examTime) {
-                    el.dataset.examTime = course.examTime;
-                }
+            el.textContent = typeof course === 'object' ? course.name : course;
+            if (typeof course === 'object' && course.examTime) {
+                el.dataset.examTime = course.examTime;
             } else {
-                el.textContent = course;
                 el.classList.add('struck');
             }
-            
-            // Find a position without collisions
-            let positionFound = false;
-            let attempts = 0;
-            let bestPosition = null;
-            let bestDistance = 0;
-            
-            while (attempts < 100) {
-                // Calculate angle with some variance
-                const angleVariance = isMobile ? Math.PI/4 : Math.PI/6;
-                const baseAngle = (index / courses.length) * Math.PI * 2;
-                const angle = baseAngle + (Math.random() - 0.5) * angleVariance;
-                
-                // Calculate position
-                const x = centerX + radius * Math.cos(angle);
-                const y = centerY + radius * Math.sin(angle) * (isMobile ? 0.8 : 1);
-                
-                // Check for collisions
-                let minCurrentDistance = Infinity;
-                for (const pos of placedPositions) {
-                    const dx = pos.x - x;
-                    const dy = pos.y - y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
-                    minCurrentDistance = Math.min(minCurrentDistance, distance);
-                }
-                
-                // Keep track of best position found
-                if (minCurrentDistance > bestDistance) {
-                    bestDistance = minCurrentDistance;
-                    bestPosition = { x, y };
-                }
-                
-                // Accept position if meets minimum distance
-                if (minCurrentDistance >= minDistance || placedPositions.length === 0) {
-                    el.style.left = `${x}%`;
-                    el.style.top = `${y}%`;
-                    positionFound = true;
-                    placedPositions.push({ x, y });
-                    break;
-                }
-                
-                attempts++;
+
+            // Radial positioning with collision avoidance
+            let x, y, angle;
+            for (let attempt = 0; attempt < 50; attempt++) {
+                angle = angleStep * index + (Math.random() * 0.5 - 0.25);
+                x = centerX + radius * Math.cos(angle) * (isMobile ? 1.2 : 1);
+                y = centerY + radius * Math.sin(angle) * (isMobile ? 0.8 : 1);
+                if (isPositionClear(x, y, boundaries)) break;
             }
-            
-            // Use best position if no ideal position found
-            if (!positionFound && bestPosition) {
-                el.style.left = `${bestPosition.x}%`;
-                el.style.top = `${bestPosition.y}%`;
-                placedPositions.push(bestPosition);
-            }
-            
-            // Add to safe zone if position was found
-            if (positionFound || bestPosition) {
-                safeZone.appendChild(el);
-            }
+
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+            container.appendChild(el);
         });
     }
 }
@@ -201,29 +167,21 @@ function generateCourseCloud() {
 function updateCourseStrikes() {
     const now = new Date();
     document.querySelectorAll('.course-item[data-exam-time]').forEach(item => {
-        const examTime = new Date(item.dataset.examTime);
-        if (examTime <= now && !item.classList.contains('struck')) {
+        if (new Date(item.dataset.examTime) <= now) {
             item.classList.add('struck');
         }
     });
 }
 
-// Initialize and update periodically
+// Initialize
 document.addEventListener('DOMContentLoaded', () => {
-    // Wait for fonts to load
-    document.fonts.ready.then(() => {
-        generateCourseCloud();
-        updateCourseStrikes();
-        
-        // Update every minute and on resize (with debounce)
-        setInterval(updateCourseStrikes, 60000);
-        
-        let resizeTimer;
-        window.addEventListener('resize', () => {
-            clearTimeout(resizeTimer);
-            resizeTimer = setTimeout(() => {
-                generateCourseCloud();
-            }, 200);
-        });
+    generateCourseCloud();
+    updateCourseStrikes();
+    setInterval(updateCourseStrikes, 60000); // Check every minute
+    
+    let resizeTimeout;
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(generateCourseCloud, 200);
     });
 });
