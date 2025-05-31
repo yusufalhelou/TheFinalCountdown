@@ -102,7 +102,7 @@ const coursesBySemester = {
  * @param {number} padding - The amount of padding to add around the element.
  * @returns {object|null} The boundary object (top, bottom, left, right) or null if element not found.
  */
-function getElementBoundary(elementId, padding = 15) {
+function getElementBoundary(elementId, padding = 30) { // Increased default padding for more space
     const el = document.getElementById(elementId);
     if (!el) return null;
     const rect = el.getBoundingClientRect();
@@ -121,7 +121,7 @@ function getElementBoundary(elementId, padding = 15) {
  * @param {number} padding - The amount of padding to add around the combined boundary.
  * @returns {object|null} The combined boundary object or null if no elements found.
  */
-function getCombinedBoundary(elementIds, padding = 30) {
+function getCombinedBoundary(elementIds, padding = 40) { // Increased default padding
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     let foundAny = false;
 
@@ -196,9 +196,9 @@ function generateCourseCloud() {
     // Define the elements that the course cloud should avoid
     const centralElementsIds = ['main-logo', 'headline', 'countdown'];
     // Get individual boundaries for collision checking with added padding
-    const centralBoundaries = centralElementsIds.map(id => getElementBoundary(id, 25)).filter(Boolean);
+    const centralBoundaries = centralElementsIds.map(id => getElementBoundary(id, 30)).filter(Boolean); // Increased padding
     // Get the combined boundary of the central elements
-    const combinedCentralRect = getCombinedBoundary(centralElementsIds, 30);
+    const combinedCentralRect = getCombinedBoundary(centralElementsIds, 50); // Increased padding for combined rect
 
     const viewportWidth = window.innerWidth;
     const viewportHeight = window.innerHeight;
@@ -207,12 +207,12 @@ function generateCourseCloud() {
     // Ensure containers have a minimum height if central elements are very close to top/bottom
     let topContainer = {
         top: 0,
-        bottom: combinedCentralRect ? combinedCentralRect.top : viewportHeight / 2 - 50, // Default if no central elements
+        bottom: combinedCentralRect ? Math.max(0, combinedCentralRect.top) : viewportHeight / 2 - 50,
         left: 0,
         right: viewportWidth
     };
     let bottomContainer = {
-        top: combinedCentralRect ? combinedCentralRect.bottom : viewportHeight / 2 + 50, // Default if no central elements
+        top: combinedCentralRect ? Math.min(viewportHeight, combinedCentralRect.bottom) : viewportHeight / 2 + 50,
         bottom: viewportHeight,
         left: 0,
         right: viewportWidth
@@ -282,28 +282,35 @@ function generateCourseCloud() {
 
         let x, y;
         let positionFound = false;
-        const maxAttempts = 200; // More attempts for better packing and collision avoidance
+        const maxAttempts = 300; // Increased attempts for better packing and collision avoidance
 
         // Determine which containers to try for placement, prioritizing closer regions for Semester 10
         const containersToTry = [];
 
         // Define sub-regions within top/bottom containers that are closer to the central block
+        // These regions are designed to be adjacent to the central block
         const topCloserRegion = {
-            ...topContainer,
-            top: Math.max(topContainer.top, (combinedCentralRect ? combinedCentralRect.top : viewportHeight / 2) - 100) // 100px above central
+            top: topContainer.top,
+            bottom: combinedCentralRect ? combinedCentralRect.top : topContainer.bottom,
+            left: topContainer.left,
+            right: topContainer.right
         };
         const bottomCloserRegion = {
-            ...bottomContainer,
-            bottom: Math.min(bottomContainer.bottom, (combinedCentralRect ? combinedCentralRect.bottom : viewportHeight / 2) + 100) // 100px below central
+            top: combinedCentralRect ? combinedCentralRect.bottom : bottomContainer.top,
+            bottom: bottomContainer.bottom,
+            left: bottomContainer.left,
+            right: bottomContainer.right
         };
 
         // Prioritize these closer regions for Semester 10 courses
         if (courseData.semester === 10) {
+            // Ensure regions are valid before adding
             if (topCloserRegion.bottom > topCloserRegion.top && topCloserRegion.right > topCloserRegion.left) containersToTry.push(topCloserRegion);
             if (bottomCloserRegion.bottom > bottomCloserRegion.top && bottomCloserRegion.right > bottomCloserRegion.left) containersToTry.push(bottomCloserRegion);
         }
 
         // Add full containers as fallback or for other semesters
+        // Ensure regions are valid before adding
         if (topContainer.bottom > topContainer.top && topContainer.right > topContainer.left) containersToTry.push(topContainer);
         if (bottomContainer.bottom > bottomContainer.top && bottomContainer.right > bottomContainer.left) containersToTry.push(bottomContainer);
 
@@ -322,21 +329,25 @@ function generateCourseCloud() {
                 continue;
             }
 
-            // Generate random position within the current container, ensuring the item fits
-            x = currentContainer.left + Math.random() * (currentContainer.right - currentContainer.left - itemWidth);
-            y = currentContainer.top + Math.random() * (currentContainer.bottom - currentContainer.top - itemHeight);
+            // Generate random position for the CENTER of the item within the current container
+            // Account for itemWidth/Height so the *entire* item fits within the container
+            const centerX = currentContainer.left + itemWidth / 2 + Math.random() * (currentContainer.right - currentContainer.left - itemWidth);
+            const centerY = currentContainer.top + itemHeight / 2 + Math.random() * (currentContainer.bottom - currentContainer.top - itemHeight);
 
-            // Ensure x and y are not negative and within viewport bounds
-            x = Math.max(0, Math.min(x, viewportWidth - itemWidth));
-            y = Math.max(0, Math.min(y, viewportHeight - itemHeight));
-
-            const itemRect = { left: x, top: y, right: x + itemWidth, bottom: y + itemHeight };
+            // Calculate the top-left corner for the itemRect, as the CSS transform will center it
+            const itemRect = {
+                left: centerX - itemWidth / 2,
+                top: centerY - itemHeight / 2,
+                right: centerX + itemWidth / 2,
+                bottom: centerY + itemHeight / 2
+            };
 
             // Check if the calculated position is clear of all defined boundaries and other placed items
             if (isPositionClear(itemRect, centralBoundaries, placedItems)) {
                 positionFound = true;
-                el.style.left = `${x}px`;
-                el.style.top = `${y}px`;
+                // Set CSS left/top to the desired CENTER of the element
+                el.style.left = `${centerX}px`;
+                el.style.top = `${centerY}px`;
                 container.appendChild(el);
                 placedItems.push({ el: el, rect: itemRect }); // Store the element and its final rectangle
                 break; // Position found, move to next course
@@ -346,19 +357,27 @@ function generateCourseCloud() {
         // Fallback: If no clear position is found after many attempts, place it at a default random spot
         // This ensures all courses appear, even if some overlap in very dense scenarios.
         if (!positionFound) {
-            const fallbackContainer = topContainer.bottom > topContainer.top ? topContainer : bottomContainer; // Pick a valid container
-            if (fallbackContainer && fallbackContainer.right > fallbackContainer.left && fallbackContainer.bottom > fallbackContainer.top) {
-                x = fallbackContainer.left + Math.random() * (fallbackContainer.right - fallbackContainer.left - itemWidth);
-                y = fallbackContainer.top + Math.random() * (fallbackContainer.bottom - fallbackContainer.top - itemHeight);
-                x = Math.max(0, Math.min(x, viewportWidth - itemWidth));
-                y = Math.max(0, Math.min(y, viewportHeight - itemHeight));
-                el.style.left = `${x}px`;
-                el.style.top = `${y}px`;
+            // Try to pick a valid container for fallback
+            const fallbackContainer = containersToTry.find(c => c.bottom > c.top && c.right > c.left) || topContainer;
+
+            if (fallbackContainer.right > fallbackContainer.left && fallbackContainer.bottom > fallbackContainer.top) {
+                // Calculate random center for fallback
+                const centerX = fallbackContainer.left + itemWidth / 2 + Math.random() * (fallbackContainer.right - fallbackContainer.left - itemWidth);
+                const centerY = fallbackContainer.top + itemHeight / 2 + Math.random() * (fallbackContainer.bottom - fallbackContainer.top - itemHeight);
+
+                const itemRect = {
+                    left: centerX - itemWidth / 2,
+                    top: centerY - itemHeight / 2,
+                    right: centerX + itemWidth / 2,
+                    bottom: centerY + itemHeight / 2
+                };
+
+                el.style.left = `${centerX}px`;
+                el.style.top = `${centerY}px`;
                 container.appendChild(el);
-                placedItems.push({ el: el, rect: { left: x, top: y, right: x + itemWidth, bottom: y + itemHeight } });
+                placedItems.push({ el: el, rect: itemRect });
             } else {
                 // If even fallback fails (e.g., no valid containers), just append it.
-                // This scenario should be extremely rare with the container logic.
                 container.appendChild(el);
             }
         }
