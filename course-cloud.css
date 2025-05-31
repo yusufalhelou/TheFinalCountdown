@@ -5,7 +5,8 @@
     width: 100vw;
     height: 100vh;
     pointer-events: none;
-    z-index: 1;
+    /* Changed z-index to 0 to appear below main content and spheres background */
+    z-index: 0; 
     overflow: hidden;
 }
 
