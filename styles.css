@@ -113,3 +113,20 @@ button {
     border: 1px solid grey;
     padding: 4px 8px;
 }
+
+.graduation-cap-emoji {
+    position: absolute;
+    font-size: 2rem; /* Adjust size as needed */
+    top: 50%; /* Position relative to the container */
+    left: 50%;
+    transform: translate(-50%, -180%); /* Adjust these values to position it perfectly */
+    z-index: 100;
+    pointer-events: none; /* So it doesn't interfere with clicking the logo */
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3); /* Optional: adds a slight shadow */
+    animation: float 2s ease-in-out infinite; /* Optional: adds subtle floating animation */
+}
+
+@keyframes float {
+    0%, 100% { transform: translate(-50%, -180%); }
+    50% { transform: translate(-50%, -190%); }
+}
